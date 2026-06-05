@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase, getDeviceId } from './lib/supabase'
+import { seedNutrientsIfEmpty } from './lib/seedNutrients'
 import { LangProvider, useLang } from './lib/LangContext'
 import SupplementList from './components/SupplementList'
 import SupplementForm from './components/SupplementForm'
@@ -44,6 +45,7 @@ function AppInner() {
   const today = new Date().toISOString().split('T')[0]
 
   const fetchAll = useCallback(async () => {
+    await seedNutrientsIfEmpty()
     const since = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]
     const [{ data: supps }, { data: nuts }, { data: logs }] = await Promise.all([
       supabase.from('supplements').select(`

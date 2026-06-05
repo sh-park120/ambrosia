@@ -1,6 +1,6 @@
 export const translations = {
   en: {
-    subtitle: 'Supplement Tracker',
+    subtitle: 'Supplement Manager',
     tabs: { today: 'Today', supplements: 'My Supplements', nutrients: 'Nutrients', stats: 'Stats' },
     addSupplement: '+ Add Supplement',
     enableReminders: '🔔 Enable Reminders',
@@ -91,7 +91,7 @@ export const translations = {
   },
 
   ko: {
-    subtitle: '영양제 트래커',
+    subtitle: 'Supplement Manager',
     tabs: { today: '오늘', supplements: '내 영양제', nutrients: '영양소', stats: '통계' },
     addSupplement: '+ 영양제 추가',
     enableReminders: '🔔 알림 켜기',

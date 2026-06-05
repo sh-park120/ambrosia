@@ -207,8 +207,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .oauth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .oauth-btn-google { background: #fff; color: #3c4043; }
 .oauth-btn-google:hover:not(:disabled) { background: #f8f8f8; box-shadow: 0 1px 4px rgba(60,64,67,.2); }
-.oauth-btn-apple { background: #000; color: #fff; border-color: #000; }
-.oauth-btn-apple:hover:not(:disabled) { background: #1a1a1a; }
+
 .auth-divider { display: flex; align-items: center; gap: 0.75rem; color: var(--text-muted); font-size: 0.8rem; }
 .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 

@@ -120,6 +120,21 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .nutrient-rec { font-size: 0.85rem; color: var(--text-muted); }
 .nutrient-rec strong { color: var(--primary-dark); }
 
+/* ── Supplement icon ── */
+.suppl-icon { display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; background: #f1f5f9; flex-shrink: 0; overflow: hidden; }
+.suppl-icon img { width: 100%; height: 100%; object-fit: cover; }
+.card-top { display: flex; align-items: center; gap: 0.65rem; }
+
+/* ── Emoji picker + icon field ── */
+.icon-field-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+.icon-preview-box { width: 52px; height: 52px; border-radius: 12px; background: #f1f5f9; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+.icon-img-preview { width: 100%; height: 100%; object-fit: cover; }
+.icon-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.emoji-picker { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 0.6rem; margin-top: 0.4rem; }
+.emoji-option { background: none; border: 1.5px solid transparent; border-radius: 8px; font-size: 1.3rem; cursor: pointer; padding: 0.2rem; line-height: 1; transition: background 0.1s, border-color 0.1s; }
+.emoji-option:hover { background: #f1f5f9; }
+.emoji-option.selected { border-color: var(--primary); background: #d1fae5; }
+
 /* ── Empty state ── */
 .empty-state { text-align: center; padding: 5rem 1rem; color: var(--text-muted); }
 .empty-icon { font-size: 3rem; display: block; margin-bottom: 1rem; }

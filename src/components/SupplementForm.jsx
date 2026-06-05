@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useLang } from '../lib/LangContext'
 
 const FREQUENCIES = ['daily', 'twice_daily', 'weekly', 'as_needed']
+
+const EMOJIS = ['💊','💉','🩺','🩻','🧬','🌿','🐟','💎','🌟','🦠','🔬','🍋','🦴','🧠',
+  '❤️','🫀','🫁','👁️','🦷','💪','🩸','🧴','🌾','🫐','🥦','🍊','☀️','🌙','🔥','⚡','🏋️','🧪']
 
 export default function SupplementForm({ initial, nutrients, user, onSave, onCancel }) {
   const { lang, t } = useLang()
@@ -9,9 +12,14 @@ export default function SupplementForm({ initial, nutrients, user, onSave, onCan
   const ct = t.catalog
 
   const isCreator = !initial || initial.created_by === user.id
+  const fileRef = useRef(null)
 
   // Catalog fields (editable only if creator or new)
   const [name, setName] = useState(initial?.name ?? '')
+  const [emoji, setEmoji] = useState(initial?.emoji ?? '')
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(initial?.image_url ?? null)
   const [manufacturer, setManufacturer] = useState(initial?.manufacturer ?? '')
   const [pillsPerDose, setPillsPerDose] = useState(initial?.pills_per_dose ?? 1)
   const [dosesPerDay, setDosesPerDay] = useState(initial?.doses_per_day ?? 1)
@@ -53,6 +61,13 @@ export default function SupplementForm({ initial, nutrients, user, onSave, onCan
     }))
   }
 
+  function handleImageChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
   function handleSubmit(e) {
     e.preventDefault()
     if (!name.trim()) return
@@ -61,6 +76,8 @@ export default function SupplementForm({ initial, nutrients, user, onSave, onCan
       manufacturer: manufacturer.trim() || null,
       pills_per_dose: Number(pillsPerDose) || 1,
       doses_per_day: Number(dosesPerDay) || 1,
+      emoji: emoji || null,
+      imageFile: imageFile || null,
       frequency,
       reminder_times: reminderTimes,
       notes: notes.trim(),
@@ -94,6 +111,49 @@ export default function SupplementForm({ initial, nutrients, user, onSave, onCan
               disabled={!isCreator}
             />
           </div>
+
+          {isCreator && (
+            <div className="field">
+              <label>{lang === 'ko' ? '아이콘' : 'Icon'}</label>
+              <div className="icon-field-row">
+                <div className="icon-preview-box">
+                  {imagePreview
+                    ? <img src={imagePreview} alt="" className="icon-img-preview" />
+                    : <span style={{ fontSize: '1.6rem' }}>{emoji || '💊'}</span>
+                  }
+                </div>
+                <div className="icon-actions">
+                  <button type="button" className="btn btn-ghost btn-sm"
+                    onClick={() => { setShowEmojiPicker(v => !v) }}>
+                    {lang === 'ko' ? '이모지 선택' : 'Pick Emoji'}
+                  </button>
+                  <button type="button" className="btn btn-ghost btn-sm"
+                    onClick={() => fileRef.current.click()}>
+                    {lang === 'ko' ? '이미지 업로드' : 'Upload Image'}
+                  </button>
+                  {(emoji || imagePreview) && (
+                    <button type="button" className="btn btn-ghost btn-sm"
+                      onClick={() => { setEmoji(''); setImageFile(null); setImagePreview(null) }}>
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+              <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
+                onChange={handleImageChange} />
+              {showEmojiPicker && (
+                <div className="emoji-picker">
+                  {EMOJIS.map(e => (
+                    <button key={e} type="button"
+                      className={`emoji-option ${emoji === e ? 'selected' : ''}`}
+                      onClick={() => { setEmoji(e); setImageFile(null); setImagePreview(null); setShowEmojiPicker(false) }}>
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="field">
             <label>{sf.manufacturer}</label>

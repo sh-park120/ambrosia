@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useLang } from '../lib/LangContext'
 import ScaleToggle from './ScaleToggle'
 import { scaleAmount, scaleDV, formatAmount } from '../lib/scaleAmount'
+import SupplIcon from './SupplIcon'
 
 export default function SupplementList({ supplements, user, onEdit, onRemoveFromList, onDeleteFromCatalog, onBrowseCatalog }) {
   const { lang, t } = useLang()
@@ -35,6 +36,7 @@ export default function SupplementList({ supplements, user, onEdit, onRemoveFrom
             return (
               <article className="card" key={s.userSupplementId}>
                 <div className="card-top">
+                  <SupplIcon emoji={s.emoji} imageUrl={s.image_url} size={38} />
                   <h3 className="card-name">{s.name}</h3>
                   <span className="badge">{t.freq[s.frequency] ?? s.frequency}</span>
                 </div>

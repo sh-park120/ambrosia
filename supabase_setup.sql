@@ -23,7 +23,9 @@ create table if not exists supplements (
 alter table supplements add column if not exists manufacturer   text;
 alter table supplements add column if not exists pills_per_dose numeric default 1;
 alter table supplements add column if not exists doses_per_day  numeric default 1;
-alter table supplements add column if not exists created_by uuid references auth.users(id);
+alter table supplements add column if not exists created_by     uuid references auth.users(id);
+alter table supplements add column if not exists emoji          text;
+alter table supplements add column if not exists image_url      text;
 
 alter table supplements enable row level security;
 

@@ -41,6 +41,8 @@ function normalizeUserSupplements(userSupps) {
     pills_per_dose: us.supplement.pills_per_dose,
     doses_per_day: us.supplement.doses_per_day,
     created_by: us.supplement.created_by,
+    emoji: us.supplement.emoji,
+    image_url: us.supplement.image_url,
     supplement_nutrients: us.supplement.supplement_nutrients,
     frequency: us.frequency,
     reminder_times: us.reminder_times,
@@ -70,7 +72,7 @@ function AppInner({ user }) {
       supabase.from('user_supplements').select(`
         id, user_id, supplement_id, frequency, reminder_times, notes,
         supplement:supplements(
-          id, name, manufacturer, pills_per_dose, doses_per_day, created_by,
+          id, name, manufacturer, pills_per_dose, doses_per_day, created_by, emoji, image_url,
           supplement_nutrients(id, amount_per_serving, nutrient_id, nutrients(*))
         )
       `).eq('user_id', user.id).order('created_at'),
@@ -128,7 +130,21 @@ function AppInner({ user }) {
   }
 
   async function handleSaveSupplement(fields) {
-    const { supplement_nutrients: snData, frequency, reminder_times, notes, ...catalogFields } = fields
+    const { supplement_nutrients: snData, frequency, reminder_times, notes, imageFile, ...catalogFields } = fields
+
+    if (imageFile) {
+      const ext = imageFile.name.split('.').pop().toLowerCase()
+      const path = `${user.id}/${Date.now()}.${ext}`
+      const { data: uploaded, error: uploadErr } = await supabase.storage
+        .from('supplement-images')
+        .upload(path, imageFile, { upsert: true })
+      if (!uploadErr && uploaded) {
+        const { data: { publicUrl } } = supabase.storage
+          .from('supplement-images')
+          .getPublicUrl(path)
+        catalogFields.image_url = publicUrl
+      }
+    }
 
     if (editTarget) {
       // Update catalog fields only if user is the creator

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useLang } from '../lib/LangContext'
 import ScaleToggle from './ScaleToggle'
 import { scaleAmount, scaleDV, formatAmount } from '../lib/scaleAmount'
+import SupplIcon from './SupplIcon'
 
 const DAY_EN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 const DAY_KO = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일']
@@ -61,6 +62,7 @@ export default function TodayView({ supplements, intakeLogs, today, onToggle }) 
           return (
             <button key={s.id} className={`checklist-item ${taken ? 'taken' : ''}`} onClick={() => onToggle(s.id)}>
               <span className="check-circle">{taken ? '✓' : ''}</span>
+              <SupplIcon emoji={s.emoji} imageUrl={s.image_url} size={32} />
               <div className="check-info">
                 <span className="check-name">{s.name}</span>
                 {s.manufacturer && <span className="check-manufacturer">{s.manufacturer}</span>}

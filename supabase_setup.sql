@@ -8,7 +8,7 @@
 -- ── 1. supplements ──────────────────────────────────────────
 create table if not exists supplements (
   id             uuid        default gen_random_uuid() primary key,
-  device_id      text        not null,
+  device_id      text,
   name           text        not null,
   manufacturer   text,
   pills_per_dose numeric     default 1,
@@ -23,14 +23,45 @@ create table if not exists supplements (
 alter table supplements add column if not exists manufacturer   text;
 alter table supplements add column if not exists pills_per_dose numeric default 1;
 alter table supplements add column if not exists doses_per_day  numeric default 1;
+alter table supplements add column if not exists created_by uuid references auth.users(id);
 
 alter table supplements enable row level security;
 
+-- Drop old open policies and create auth-based ones
+do $$ begin
+  drop policy if exists "device access" on supplements;
+  drop policy if exists "open" on supplements;
+exception when others then null; end $$;
+
 do $$ begin
   if not exists (
-    select 1 from pg_policies where tablename = 'supplements' and policyname = 'device access'
+    select 1 from pg_policies where tablename = 'supplements' and policyname = 'authenticated read'
   ) then
-    create policy "device access" on supplements for all using (true) with check (true);
+    create policy "authenticated read" on supplements for select using (auth.role() = 'authenticated');
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (
+    select 1 from pg_policies where tablename = 'supplements' and policyname = 'creator write'
+  ) then
+    create policy "creator write" on supplements for insert with check (auth.uid() = created_by);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (
+    select 1 from pg_policies where tablename = 'supplements' and policyname = 'creator update'
+  ) then
+    create policy "creator update" on supplements for update using (auth.uid() = created_by);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (
+    select 1 from pg_policies where tablename = 'supplements' and policyname = 'creator delete'
+  ) then
+    create policy "creator delete" on supplements for delete using (auth.uid() = created_by);
   end if;
 end $$;
 
@@ -48,6 +79,8 @@ create table if not exists nutrients (
   category          text        default 'Other',
   created_at        timestamptz default now()
 );
+
+alter table nutrients add column if not exists created_by uuid references auth.users(id);
 
 alter table nutrients enable row level security;
 
@@ -83,19 +116,47 @@ end $$;
 -- ── 4. intake_logs ───────────────────────────────────────────
 create table if not exists intake_logs (
   id            uuid  default gen_random_uuid() primary key,
-  device_id     text  not null,
+  device_id     text,
   supplement_id uuid  not null references supplements(id) on delete cascade,
   taken_date    date  not null default current_date,
-  created_at    timestamptz default now(),
-  unique(device_id, supplement_id, taken_date)
+  created_at    timestamptz default now()
 );
+
+alter table intake_logs add column if not exists user_id uuid references auth.users(id);
 
 alter table intake_logs enable row level security;
 
 do $$ begin
+  drop policy if exists "open" on intake_logs;
+exception when others then null; end $$;
+
+do $$ begin
   if not exists (
-    select 1 from pg_policies where tablename = 'intake_logs' and policyname = 'open'
+    select 1 from pg_policies where tablename = 'intake_logs' and policyname = 'own'
   ) then
-    create policy "open" on intake_logs for all using (true) with check (true);
+    create policy "own" on intake_logs for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  end if;
+end $$;
+
+
+-- ── 5. user_supplements ──────────────────────────────────────
+create table if not exists user_supplements (
+  id            uuid        default gen_random_uuid() primary key,
+  user_id       uuid        references auth.users(id) not null,
+  supplement_id uuid        references supplements(id) on delete cascade not null,
+  frequency     text        default 'daily',
+  reminder_times text[]     default '{}',
+  notes         text,
+  created_at    timestamptz default now(),
+  unique(user_id, supplement_id)
+);
+
+alter table user_supplements enable row level security;
+
+do $$ begin
+  if not exists (
+    select 1 from pg_policies where tablename = 'user_supplements' and policyname = 'own'
+  ) then
+    create policy "own" on user_supplements for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
   end if;
 end $$;

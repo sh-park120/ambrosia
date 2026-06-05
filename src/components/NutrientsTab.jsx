@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { useLang } from '../lib/LangContext'
-import { supabase, getDeviceId } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import NutrientForm from './NutrientForm'
 
-const deviceId = getDeviceId()
 const CATEGORIES = ['Vitamin', 'Mineral', 'Fatty Acid', 'Amino Acid', 'Probiotic', 'Herb', 'Other']
 
-export default function NutrientsTab({ nutrients, onRefresh }) {
+export default function NutrientsTab({ nutrients, user, onRefresh }) {
   const { lang, t } = useLang()
   const nt = t.nutrientsTab
   const [showForm, setShowForm] = useState(false)
@@ -17,7 +16,7 @@ export default function NutrientsTab({ nutrients, onRefresh }) {
     if (editTarget) {
       await supabase.from('nutrients').update(fields).eq('id', editTarget.id)
     } else {
-      await supabase.from('nutrients').insert({ ...fields, device_id: deviceId })
+      await supabase.from('nutrients').insert({ ...fields, created_by: user.id })
     }
     onRefresh()
     setShowForm(false)
@@ -63,6 +62,8 @@ export default function NutrientsTab({ nutrients, onRefresh }) {
             const primaryName = lang === 'ko' ? n.name_ko : n.name_en
             const secondaryName = lang === 'ko' ? n.name_en : n.name_ko
             const desc = lang === 'ko' ? n.description_ko : n.description_en
+            const isCreator = n.created_by === user.id
+            const isBuiltIn = !n.created_by
             return (
               <div className="nutrient-card" key={n.id}>
                 <div className="card-top">
@@ -76,10 +77,10 @@ export default function NutrientsTab({ nutrients, onRefresh }) {
                 <p className="nutrient-rec">
                   {nt.recDaily}: <strong>{n.recommended_daily ?? '—'} {n.unit}</strong>
                 </p>
-                {!n.device_id && <span className="builtin-tag">{nt.builtIn}</span>}
+                {isBuiltIn && <span className="builtin-tag">{nt.builtIn}</span>}
                 <div className="card-actions">
                   <button className="btn btn-sm" onClick={() => { setEditTarget(n); setShowForm(true) }}>{t.edit}</button>
-                  {n.device_id && (
+                  {isCreator && (
                     <button className="btn btn-sm btn-danger" onClick={() => handleDelete(n.id)}>{t.delete}</button>
                   )}
                 </div>

@@ -56,6 +56,12 @@ export const translations = {
       day: 'day', days: 'days', todayCheck: '✓ Today',
       noData: 'No data yet.', noDataHint: 'Add supplements and start logging in Today.',
       todayNutrients: "Today's Nutrient Totals",
+      analysisTitle: 'Nutrition Analysis',
+      coverageTitle: 'Nutrient Coverage',
+      coverageSub: 'vs. daily recommended',
+      purposeTitle: 'Health Score by Body System',
+      modeToday: "Today's Intake",
+      modeFull: 'Full Daily Dose',
     },
 
     auth: {
@@ -147,6 +153,12 @@ export const translations = {
       day: '일', days: '일', todayCheck: '✓ 오늘 완료',
       noData: '데이터가 없습니다.', noDataHint: '영양제를 추가하고 오늘 탭에서 복용 기록을 시작하세요.',
       todayNutrients: '오늘 영양소 합계',
+      analysisTitle: '영양 분석',
+      coverageTitle: '영양소 충족률',
+      coverageSub: '(일일 권장량 대비)',
+      purposeTitle: '부위별 건강 점수',
+      modeToday: '오늘 섭취',
+      modeFull: '하루 전체',
     },
 
     auth: {

@@ -29,9 +29,16 @@ const DEFAULT_NUTRIENTS = [
 ]
 
 export async function seedNutrientsIfEmpty() {
-  const { count } = await supabase
+  const { count, error } = await supabase
     .from('nutrients')
     .select('*', { count: 'exact', head: true })
+
+  if (error) {
+    console.error('[Ambrosia] nutrients table missing — run the Supabase SQL setup:', error.message)
+    return
+  }
   if (count > 0) return
-  await supabase.from('nutrients').insert(DEFAULT_NUTRIENTS)
+
+  const { error: insertError } = await supabase.from('nutrients').insert(DEFAULT_NUTRIENTS)
+  if (insertError) console.error('[Ambrosia] Failed to seed nutrients:', insertError.message)
 }

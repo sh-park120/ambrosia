@@ -70,6 +70,9 @@ export const translations = {
       signingIn: 'Signing in…',
       signingUp: 'Signing up…',
       checkEmail: 'Check your email to confirm your account.',
+      orContinueWith: 'or continue with',
+      continueWithGoogle: 'Continue with Google',
+      continueWithApple: 'Continue with Apple',
     },
 
     catalog: {
@@ -159,6 +162,9 @@ export const translations = {
       signingIn: '로그인 중…',
       signingUp: '가입 중…',
       checkEmail: '이메일을 확인하여 계정을 인증해 주세요.',
+      orContinueWith: '또는 다음으로 계속',
+      continueWithGoogle: 'Google로 계속',
+      continueWithApple: 'Apple로 계속',
     },
 
     catalog: {

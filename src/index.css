@@ -202,6 +202,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .auth-submit { width: 100%; justify-content: center; margin-top: 0.25rem; }
 .auth-error { font-size: 0.83rem; color: var(--danger); padding: 0.5rem 0.75rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; }
 .auth-success { font-size: 0.83rem; color: #065f46; padding: 0.5rem 0.75rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; }
+.oauth-btns { display: flex; flex-direction: column; gap: 0.6rem; }
+.oauth-btn { display: flex; align-items: center; justify-content: center; gap: 0.6rem; width: 100%; padding: 0.65rem 1rem; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: background 0.15s, box-shadow 0.15s; border: 1.5px solid var(--border); }
+.oauth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.oauth-btn-google { background: #fff; color: #3c4043; }
+.oauth-btn-google:hover:not(:disabled) { background: #f8f8f8; box-shadow: 0 1px 4px rgba(60,64,67,.2); }
+.oauth-btn-apple { background: #000; color: #fff; border-color: #000; }
+.oauth-btn-apple:hover:not(:disabled) { background: #1a1a1a; }
+.auth-divider { display: flex; align-items: center; gap: 0.75rem; color: var(--text-muted); font-size: 0.8rem; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
 /* ── Catalog modal ── */
 .catalog-modal { max-width: 600px; }

@@ -1,29 +1,25 @@
 import { useState } from 'react'
+import { useLang } from '../lib/LangContext'
 
-const FREQUENCIES = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'twice_daily', label: 'Twice Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'as_needed', label: 'As Needed' },
-]
+const FREQUENCIES = ['daily', 'twice_daily', 'weekly', 'as_needed']
 
-function emptyNutrient() {
-  return { name: '', amount: '', unit: '', daily_value_pct: '' }
-}
+export default function SupplementForm({ initial, nutrients, onSave, onCancel }) {
+  const { lang, t } = useLang()
+  const sf = t.suppForm
 
-export default function SupplementForm({ initial, onSave, onCancel }) {
   const [name, setName] = useState(initial?.name ?? '')
   const [dosage, setDosage] = useState(initial?.dosage ?? '')
   const [frequency, setFrequency] = useState(initial?.frequency ?? 'daily')
   const [reminderTimes, setReminderTimes] = useState(initial?.reminder_times ?? [])
   const [newTime, setNewTime] = useState('')
   const [notes, setNotes] = useState(initial?.notes ?? '')
-
-  const [calories, setCalories] = useState(initial?.calories ?? '')
-  const [proteinG, setProteinG] = useState(initial?.protein_g ?? '')
-  const [carbsG, setCarbsG] = useState(initial?.carbs_g ?? '')
-  const [fatG, setFatG] = useState(initial?.fat_g ?? '')
-  const [nutrients, setNutrients] = useState(initial?.nutrients ?? [])
+  const [selectedNutrients, setSelectedNutrients] = useState(
+    initial?.supplement_nutrients?.map(sn => ({
+      nutrient_id: sn.nutrient_id,
+      amount_per_serving: String(sn.amount_per_serving),
+      nutrient: sn.nutrients,
+    })) ?? []
+  )
 
   function addTime() {
     if (newTime && !reminderTimes.includes(newTime)) {
@@ -32,103 +28,130 @@ export default function SupplementForm({ initial, onSave, onCancel }) {
     }
   }
 
-  function updateNutrient(i, field, value) {
-    setNutrients(prev => prev.map((n, idx) => idx === i ? { ...n, [field]: value } : n))
+  function addNutrientRow() {
+    setSelectedNutrients(prev => [...prev, { nutrient_id: '', amount_per_serving: '', nutrient: null }])
+  }
+
+  function updateRow(i, field, value) {
+    setSelectedNutrients(prev => prev.map((sn, idx) => {
+      if (idx !== i) return sn
+      if (field === 'nutrient_id') {
+        return { ...sn, nutrient_id: value, nutrient: nutrients.find(n => n.id === value) ?? null }
+      }
+      return { ...sn, [field]: value }
+    }))
   }
 
   function handleSubmit(e) {
     e.preventDefault()
     if (!name.trim()) return
     onSave({
-      name: name.trim(),
-      dosage: dosage.trim(),
-      frequency,
-      reminder_times: reminderTimes,
-      notes: notes.trim(),
-      calories: calories === '' ? null : Number(calories),
-      protein_g: proteinG === '' ? null : Number(proteinG),
-      carbs_g: carbsG === '' ? null : Number(carbsG),
-      fat_g: fatG === '' ? null : Number(fatG),
-      nutrients: nutrients.filter(n => n.name.trim()),
+      name: name.trim(), dosage: dosage.trim(), frequency,
+      reminder_times: reminderTimes, notes: notes.trim(),
+      supplement_nutrients: selectedNutrients.filter(sn => sn.nutrient_id && sn.amount_per_serving !== ''),
     })
   }
+
+  // Group nutrients by category for the select dropdown
+  const grouped = {}
+  nutrients.forEach(n => {
+    if (!grouped[n.category]) grouped[n.category] = []
+    grouped[n.category].push(n)
+  })
 
   return (
     <div className="overlay" onClick={e => e.target === e.currentTarget && onCancel()}>
       <div className="modal">
-        <h2 className="modal-title">{initial ? 'Edit Supplement' : 'Add Supplement'}</h2>
+        <h2 className="modal-title">{initial ? sf.editTitle : sf.addTitle}</h2>
         <form onSubmit={handleSubmit}>
-
           <div className="field">
-            <label>Name *</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Vitamin D3" required autoFocus />
+            <label>{sf.name}</label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder={sf.namePlaceholder} required autoFocus />
+          </div>
+          <div className="two-col">
+            <div className="field">
+              <label>{sf.dosage}</label>
+              <input value={dosage} onChange={e => setDosage(e.target.value)} placeholder={sf.dosagePlaceholder} />
+            </div>
+            <div className="field">
+              <label>{sf.frequency}</label>
+              <select value={frequency} onChange={e => setFrequency(e.target.value)}>
+                {FREQUENCIES.map(f => <option key={f} value={f}>{t.freq[f]}</option>)}
+              </select>
+            </div>
           </div>
           <div className="field">
-            <label>Dosage</label>
-            <input value={dosage} onChange={e => setDosage(e.target.value)} placeholder="e.g. 2000 IU, 1 capsule" />
-          </div>
-          <div className="field">
-            <label>Frequency</label>
-            <select value={frequency} onChange={e => setFrequency(e.target.value)}>
-              {FREQUENCIES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label>Reminder Times</label>
+            <label>{sf.reminderTimes}</label>
             <div className="time-row">
               <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} />
-              <button type="button" className="btn btn-ghost" onClick={addTime}>Add</button>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={addTime}>+</button>
             </div>
             {reminderTimes.length > 0 && (
               <div className="time-tags">
-                {reminderTimes.map(t => (
-                  <span className="tag" key={t}>
-                    {t}
-                    <button type="button" className="tag-remove" onClick={() => setReminderTimes(p => p.filter(x => x !== t))}>×</button>
+                {reminderTimes.map(tm => (
+                  <span className="tag" key={tm}>
+                    {tm}
+                    <button type="button" className="tag-remove" onClick={() => setReminderTimes(p => p.filter(x => x !== tm))}>×</button>
                   </span>
                 ))}
               </div>
             )}
           </div>
           <div className="field">
-            <label>Notes</label>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Take with food" rows={2} />
+            <label>{sf.notes}</label>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder={sf.notesPlaceholder} rows={2} />
           </div>
 
-          <details className="nutrition-details">
-            <summary className="nutrition-summary">Nutrition Info <span className="optional">(optional)</span></summary>
-
-            <p className="section-label">Macros per serving</p>
-            <div className="macro-grid">
-              {[['Calories', 'kcal', calories, setCalories],
-                ['Protein', 'g', proteinG, setProteinG],
-                ['Carbs', 'g', carbsG, setCarbsG],
-                ['Fat', 'g', fatG, setFatG]].map(([label, unit, val, set]) => (
-                <div className="field" key={label}>
-                  <label>{label} <span className="unit-hint">({unit})</span></label>
-                  <input type="number" min="0" step="any" value={val} onChange={e => set(e.target.value)} placeholder="0" />
-                </div>
-              ))}
-            </div>
-
-            <p className="section-label">Nutrients / Vitamins</p>
-            {nutrients.map((n, i) => (
-              <div className="nutrient-row" key={i}>
-                <input placeholder="Name (e.g. Zinc)" value={n.name} onChange={e => updateNutrient(i, 'name', e.target.value)} />
-                <input type="number" placeholder="Amount" min="0" step="any" value={n.amount} onChange={e => updateNutrient(i, 'amount', e.target.value)} />
-                <input placeholder="Unit" value={n.unit} onChange={e => updateNutrient(i, 'unit', e.target.value)} />
-                <input type="number" placeholder="DV%" min="0" max="9999" value={n.daily_value_pct} onChange={e => updateNutrient(i, 'daily_value_pct', e.target.value)} />
-                <button type="button" className="tag-remove" onClick={() => setNutrients(p => p.filter((_, idx) => idx !== i))}>×</button>
+          <div className="field">
+            <label>{sf.nutrientsSection}</label>
+            {selectedNutrients.length > 0 && (
+              <div className="sn-header">
+                <span>{lang === 'ko' ? '영양소' : 'Nutrient'}</span>
+                <span>{sf.amountLabel}</span>
+                <span>DV%</span>
+                <span />
               </div>
-            ))}
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setNutrients(p => [...p, emptyNutrient()])}>
-              + Add Nutrient
+            )}
+            {selectedNutrients.map((sn, i) => {
+              const dvPct = sn.nutrient?.recommended_daily && sn.amount_per_serving
+                ? Math.round((Number(sn.amount_per_serving) / sn.nutrient.recommended_daily) * 100)
+                : null
+              return (
+                <div className="sn-row" key={i}>
+                  <select value={sn.nutrient_id} onChange={e => updateRow(i, 'nutrient_id', e.target.value)}>
+                    <option value="">{sf.selectNutrient}</option>
+                    {Object.entries(grouped).map(([cat, items]) => (
+                      <optgroup key={cat} label={t.categories[cat] || cat}>
+                        {items.map(n => (
+                          <option key={n.id} value={n.id}>
+                            {lang === 'ko' ? n.name_ko : n.name_en}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                  <div className="sn-amount">
+                    <input
+                      type="number" min="0" step="any"
+                      placeholder="0"
+                      value={sn.amount_per_serving}
+                      onChange={e => updateRow(i, 'amount_per_serving', e.target.value)}
+                    />
+                    {sn.nutrient && <span className="sn-unit">{sn.nutrient.unit}</span>}
+                  </div>
+                  <span className="sn-dv">{dvPct !== null ? `${dvPct}%` : '—'}</span>
+                  <button type="button" className="tag-remove" onClick={() => setSelectedNutrients(p => p.filter((_, idx) => idx !== i))}>×</button>
+                </div>
+              )
+            })}
+            <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: '0.5rem' }} onClick={addNutrientRow}>
+              {sf.addNutrient}
             </button>
-          </details>
+          </div>
 
           <div className="form-actions">
-            <button type="button" className="btn btn-ghost" onClick={onCancel}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Save</button>
+            <button type="button" className="btn btn-ghost" onClick={onCancel}>{t.cancel}</button>
+            <button type="submit" className="btn btn-primary">{t.save}</button>
           </div>
         </form>
       </div>

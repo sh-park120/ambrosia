@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase, getDeviceId } from './lib/supabase'
+import { LangProvider, useLang } from './lib/LangContext'
 import SupplementList from './components/SupplementList'
 import SupplementForm from './components/SupplementForm'
+import NutrientsTab from './components/NutrientsTab'
 import TodayView from './components/TodayView'
 import StatsView from './components/StatsView'
 
@@ -28,24 +30,30 @@ function scheduleReminders(supplements) {
   })
 }
 
-export default function App() {
+function AppInner() {
+  const { lang, t, setLang } = useLang()
   const [tab, setTab] = useState('today')
   const [supplements, setSupplements] = useState([])
+  const [nutrients, setNutrients] = useState([])
   const [intakeLogs, setIntakeLogs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
+  const [showSuppForm, setShowSuppForm] = useState(false)
   const [editTarget, setEditTarget] = useState(null)
   const [notifPermission, setNotifPermission] = useState(Notification.permission)
 
   const today = new Date().toISOString().split('T')[0]
 
   const fetchAll = useCallback(async () => {
-    const [{ data: supps }, { data: logs }] = await Promise.all([
-      supabase.from('supplements').select('*').eq('device_id', deviceId).order('created_at'),
-      supabase.from('intake_logs').select('*').eq('device_id', deviceId)
-        .gte('taken_date', new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]),
+    const since = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]
+    const [{ data: supps }, { data: nuts }, { data: logs }] = await Promise.all([
+      supabase.from('supplements').select(`
+        *, supplement_nutrients(id, amount_per_serving, nutrient_id, nutrients(*))
+      `).eq('device_id', deviceId).order('created_at'),
+      supabase.from('nutrients').select('*').order('category').order('name_en'),
+      supabase.from('intake_logs').select('*').eq('device_id', deviceId).gte('taken_date', since),
     ])
     if (supps) setSupplements(supps)
+    if (nuts) setNutrients(nuts)
     if (logs) setIntakeLogs(logs)
     setLoading(false)
   }, [])
@@ -54,18 +62,15 @@ export default function App() {
   useEffect(() => { scheduleReminders(supplements) }, [supplements])
 
   async function toggleIntake(supplementId) {
-    const existing = intakeLogs.find(
-      l => l.supplement_id === supplementId && l.taken_date === today
-    )
+    const existing = intakeLogs.find(l => l.supplement_id === supplementId && l.taken_date === today)
     if (existing) {
-      const { error } = await supabase.from('intake_logs').delete().eq('id', existing.id)
-      if (!error) setIntakeLogs(prev => prev.filter(l => l.id !== existing.id))
+      await supabase.from('intake_logs').delete().eq('id', existing.id)
+      setIntakeLogs(prev => prev.filter(l => l.id !== existing.id))
     } else {
-      const { data, error } = await supabase
-        .from('intake_logs')
+      const { data } = await supabase.from('intake_logs')
         .insert({ device_id: deviceId, supplement_id: supplementId, taken_date: today })
         .select().single()
-      if (!error) setIntakeLogs(prev => [...prev, data])
+      if (data) setIntakeLogs(prev => [...prev, data])
     }
   }
 
@@ -75,44 +80,58 @@ export default function App() {
     if (perm === 'granted') scheduleReminders(supplements)
   }
 
-  async function handleSave(fields) {
+  async function handleSaveSupplement(fields) {
+    const { supplement_nutrients: snData, ...suppFields } = fields
     if (editTarget) {
-      const { error } = await supabase.from('supplements').update(fields).eq('id', editTarget.id)
-      if (!error) setSupplements(prev => prev.map(s => s.id === editTarget.id ? { ...s, ...fields } : s))
+      await supabase.from('supplements').update(suppFields).eq('id', editTarget.id)
+      await supabase.from('supplement_nutrients').delete().eq('supplement_id', editTarget.id)
+      if (snData.length > 0) {
+        await supabase.from('supplement_nutrients').insert(
+          snData.map(sn => ({ supplement_id: editTarget.id, nutrient_id: sn.nutrient_id, amount_per_serving: Number(sn.amount_per_serving) }))
+        )
+      }
     } else {
-      const { data, error } = await supabase
-        .from('supplements').insert({ ...fields, device_id: deviceId }).select().single()
-      if (!error) setSupplements(prev => [...prev, data])
+      const { data: created } = await supabase.from('supplements')
+        .insert({ ...suppFields, device_id: deviceId }).select().single()
+      if (created && snData.length > 0) {
+        await supabase.from('supplement_nutrients').insert(
+          snData.map(sn => ({ supplement_id: created.id, nutrient_id: sn.nutrient_id, amount_per_serving: Number(sn.amount_per_serving) }))
+        )
+      }
     }
-    setShowForm(false)
+    await fetchAll()
+    setShowSuppForm(false)
     setEditTarget(null)
   }
 
-  async function handleDelete(id) {
-    const { error } = await supabase.from('supplements').delete().eq('id', id)
-    if (!error) setSupplements(prev => prev.filter(s => s.id !== id))
+  async function handleDeleteSupplement(id) {
+    await supabase.from('supplements').delete().eq('id', id)
+    setSupplements(prev => prev.filter(s => s.id !== id))
   }
-
-  function openEdit(supp) { setEditTarget(supp); setShowForm(true) }
-  function openAdd() { setEditTarget(null); setShowForm(true) }
 
   return (
     <div className="app">
       <header className="app-header">
         <div>
           <h1 className="app-title">Ambrosia</h1>
-          <p className="app-subtitle">Supplement Tracker</p>
+          <p className="app-subtitle">{t.subtitle}</p>
         </div>
         <div className="header-actions">
+          <div className="lang-toggle">
+            <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>ENG</button>
+            <button className={lang === 'ko' ? 'active' : ''} onClick={() => setLang('ko')}>KOR</button>
+          </div>
           {notifPermission !== 'granted' && (
-            <button className="btn btn-ghost" onClick={requestPermission}>🔔 Enable Reminders</button>
+            <button className="btn btn-ghost" onClick={requestPermission}>{t.enableReminders}</button>
           )}
-          <button className="btn btn-primary" onClick={openAdd}>+ Add Supplement</button>
+          <button className="btn btn-primary" onClick={() => { setEditTarget(null); setShowSuppForm(true) }}>
+            {t.addSupplement}
+          </button>
         </div>
       </header>
 
       <nav className="tab-nav">
-        {[['today', 'Today'], ['supplements', 'My Supplements'], ['stats', 'Stats']].map(([key, label]) => (
+        {Object.entries(t.tabs).map(([key, label]) => (
           <button key={key} className={`tab-btn ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>
             {label}
           </button>
@@ -120,24 +139,26 @@ export default function App() {
       </nav>
 
       <main className="app-main">
-        {loading ? (
-          <p className="loading">Loading…</p>
-        ) : tab === 'today' ? (
-          <TodayView supplements={supplements} intakeLogs={intakeLogs} today={today} onToggle={toggleIntake} />
-        ) : tab === 'supplements' ? (
-          <SupplementList supplements={supplements} onEdit={openEdit} onDelete={handleDelete} />
-        ) : (
-          <StatsView supplements={supplements} intakeLogs={intakeLogs} today={today} />
-        )}
+        {loading ? <p className="loading">Loading…</p>
+          : tab === 'today' ? <TodayView supplements={supplements} intakeLogs={intakeLogs} today={today} onToggle={toggleIntake} />
+          : tab === 'supplements' ? <SupplementList supplements={supplements} onEdit={s => { setEditTarget(s); setShowSuppForm(true) }} onDelete={handleDeleteSupplement} />
+          : tab === 'nutrients' ? <NutrientsTab nutrients={nutrients} onRefresh={fetchAll} />
+          : <StatsView supplements={supplements} intakeLogs={intakeLogs} today={today} />
+        }
       </main>
 
-      {showForm && (
+      {showSuppForm && (
         <SupplementForm
           initial={editTarget}
-          onSave={handleSave}
-          onCancel={() => { setShowForm(false); setEditTarget(null) }}
+          nutrients={nutrients}
+          onSave={handleSaveSupplement}
+          onCancel={() => { setShowSuppForm(false); setEditTarget(null) }}
         />
       )}
     </div>
   )
+}
+
+export default function App() {
+  return <LangProvider><AppInner /></LangProvider>
 }

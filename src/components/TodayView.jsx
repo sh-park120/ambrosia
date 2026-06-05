@@ -1,36 +1,42 @@
-const DAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-const MONTH = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+import { useLang } from '../lib/LangContext'
+
+const DAY_EN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+const DAY_KO = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일']
+const MONTH_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const MONTH_KO = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
 
 export default function TodayView({ supplements, intakeLogs, today, onToggle }) {
+  const { lang, t } = useLang()
+  const tt = t.today
+
   const takenIds = new Set(intakeLogs.filter(l => l.taken_date === today).map(l => l.supplement_id))
   const takenSupps = supplements.filter(s => takenIds.has(s.id))
 
   const d = new Date()
-  const dateLabel = `${DAY[d.getDay()]}, ${MONTH[d.getMonth()]} ${d.getDate()}`
+  const dateLabel = lang === 'ko'
+    ? `${DAY_KO[d.getDay()]} ${d.getFullYear()}년 ${MONTH_KO[d.getMonth()]} ${d.getDate()}일`
+    : `${DAY_EN[d.getDay()]}, ${MONTH_EN[d.getMonth()]} ${d.getDate()}`
 
   // Aggregate nutrients from taken supplements
-  const totals = { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
   const nutrientMap = {}
   takenSupps.forEach(s => {
-    if (s.calories) totals.calories += Number(s.calories)
-    if (s.protein_g) totals.protein_g += Number(s.protein_g)
-    if (s.carbs_g) totals.carbs_g += Number(s.carbs_g)
-    if (s.fat_g) totals.fat_g += Number(s.fat_g)
-    ;(s.nutrients || []).forEach(n => {
-      const key = `${n.name}__${n.unit}`
-      if (!nutrientMap[key]) nutrientMap[key] = { name: n.name, unit: n.unit, amount: 0, daily_value_pct: n.daily_value_pct }
-      nutrientMap[key].amount += Number(n.amount) || 0
+    ;(s.supplement_nutrients || []).forEach(sn => {
+      const n = sn.nutrients
+      if (!n) return
+      if (!nutrientMap[n.id]) {
+        nutrientMap[n.id] = { name_en: n.name_en, name_ko: n.name_ko, unit: n.unit, amount: 0, recommended_daily: n.recommended_daily }
+      }
+      nutrientMap[n.id].amount += Number(sn.amount_per_serving) || 0
     })
   })
-  const hasMacros = totals.calories || totals.protein_g || totals.carbs_g || totals.fat_g
-  const aggregatedNutrients = Object.values(nutrientMap)
+  const aggNutrients = Object.values(nutrientMap)
 
   if (supplements.length === 0) {
     return (
       <div className="empty-state">
         <span className="empty-icon">☀️</span>
-        <h2>No supplements added yet</h2>
-        <p>Go to "My Supplements" and add your first one.</p>
+        <h2>{tt.noSupplements}</h2>
+        <p>{tt.goAdd}</p>
       </div>
     )
   }
@@ -39,7 +45,7 @@ export default function TodayView({ supplements, intakeLogs, today, onToggle }) 
     <div className="today-wrap">
       <div className="today-header">
         <h2 className="today-date">{dateLabel}</h2>
-        <span className="today-count">{takenIds.size} / {supplements.length} taken</span>
+        <span className="today-count">{takenIds.size} / {supplements.length} {lang === 'ko' ? '섭취 완료' : 'taken'}</span>
       </div>
 
       <div className="checklist">
@@ -52,45 +58,36 @@ export default function TodayView({ supplements, intakeLogs, today, onToggle }) 
                 <span className="check-name">{s.name}</span>
                 {s.dosage && <span className="check-dosage">{s.dosage}</span>}
               </div>
-              {taken && <span className="taken-badge">Done</span>}
+              {taken && <span className="taken-badge">{tt.done}</span>}
             </button>
           )
         })}
       </div>
 
-      {takenSupps.length > 0 && (
+      {takenSupps.length > 0 && aggNutrients.length > 0 && (
         <div className="today-nutrition">
-          <h3 className="section-title">Today's Nutrition from Supplements</h3>
-
-          {hasMacros && (
-            <div className="macro-summary">
-              {[['Calories', totals.calories, 'kcal'],
-                ['Protein', totals.protein_g, 'g'],
-                ['Carbs', totals.carbs_g, 'g'],
-                ['Fat', totals.fat_g, 'g']].filter(([, v]) => v > 0).map(([label, val, unit]) => (
-                <div className="macro-chip large" key={label}>
-                  <span className="macro-val">{Math.round(val * 10) / 10}{unit}</span>
-                  <span className="macro-label">{label}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {aggregatedNutrients.length > 0 && (
-            <ul className="nutrient-list">
-              {aggregatedNutrients.map((n, i) => (
+          <h3 className="section-title">{tt.nutritionTitle}</h3>
+          <ul className="nutrient-list">
+            {aggNutrients.map((n, i) => {
+              const dvPct = n.recommended_daily
+                ? Math.round((n.amount / n.recommended_daily) * 100)
+                : null
+              return (
                 <li key={i} className="nutrient-item">
-                  <span>{n.name} — {Math.round(n.amount * 10) / 10}{n.unit}</span>
-                  {n.daily_value_pct && (
+                  <div className="nutrient-item-row">
+                    <span className="nutrient-name">{lang === 'ko' ? n.name_ko : n.name_en}</span>
+                    <span className="nutrient-amount">{Math.round(n.amount * 10) / 10} {n.unit}</span>
+                  </div>
+                  {dvPct !== null && (
                     <div className="dv-bar-wrap">
-                      <div className="dv-bar" style={{ width: `${Math.min(n.daily_value_pct, 100)}%` }} />
-                      <span className="dv-pct">{n.daily_value_pct}% DV</span>
+                      <div className="dv-bar" style={{ width: `${Math.min(dvPct, 100)}%`, background: dvPct >= 100 ? '#10b981' : dvPct >= 50 ? '#f59e0b' : '#94a3b8' }} />
+                      <span className="dv-pct">{dvPct}% {tt.dvLabel}</span>
                     </div>
                   )}
                 </li>
-              ))}
-            </ul>
-          )}
+              )
+            })}
+          </ul>
         </div>
       )}
     </div>

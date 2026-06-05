@@ -8,7 +8,9 @@ export default function SupplementForm({ initial, nutrients, onSave, onCancel })
   const sf = t.suppForm
 
   const [name, setName] = useState(initial?.name ?? '')
-  const [dosage, setDosage] = useState(initial?.dosage ?? '')
+  const [manufacturer, setManufacturer] = useState(initial?.manufacturer ?? '')
+  const [pillsPerDose, setPillsPerDose] = useState(initial?.pills_per_dose ?? 1)
+  const [dosesPerDay, setDosesPerDay] = useState(initial?.doses_per_day ?? 1)
   const [frequency, setFrequency] = useState(initial?.frequency ?? 'daily')
   const [reminderTimes, setReminderTimes] = useState(initial?.reminder_times ?? [])
   const [newTime, setNewTime] = useState('')
@@ -20,6 +22,9 @@ export default function SupplementForm({ initial, nutrients, onSave, onCancel })
       nutrient: sn.nutrients,
     })) ?? []
   )
+
+  const totalPerDay = (Number(pillsPerDose) || 0) * (Number(dosesPerDay) || 0)
+  const pillWord = totalPerDay === 1 ? sf.pill : sf.pills
 
   function addTime() {
     if (newTime && !reminderTimes.includes(newTime)) {
@@ -46,13 +51,17 @@ export default function SupplementForm({ initial, nutrients, onSave, onCancel })
     e.preventDefault()
     if (!name.trim()) return
     onSave({
-      name: name.trim(), dosage: dosage.trim(), frequency,
-      reminder_times: reminderTimes, notes: notes.trim(),
+      name: name.trim(),
+      manufacturer: manufacturer.trim() || null,
+      pills_per_dose: Number(pillsPerDose) || 1,
+      doses_per_day: Number(dosesPerDay) || 1,
+      frequency,
+      reminder_times: reminderTimes,
+      notes: notes.trim(),
       supplement_nutrients: selectedNutrients.filter(sn => sn.nutrient_id && sn.amount_per_serving !== ''),
     })
   }
 
-  // Group nutrients by category for the select dropdown
   const grouped = {}
   nutrients.forEach(n => {
     if (!grouped[n.category]) grouped[n.category] = []
@@ -64,22 +73,39 @@ export default function SupplementForm({ initial, nutrients, onSave, onCancel })
       <div className="modal">
         <h2 className="modal-title">{initial ? sf.editTitle : sf.addTitle}</h2>
         <form onSubmit={handleSubmit}>
+
           <div className="field">
             <label>{sf.name}</label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder={sf.namePlaceholder} required autoFocus />
           </div>
-          <div className="two-col">
+
+          <div className="field">
+            <label>{sf.manufacturer}</label>
+            <input value={manufacturer} onChange={e => setManufacturer(e.target.value)} placeholder={sf.manufacturerPlaceholder} />
+          </div>
+
+          <div className="dosage-grid">
             <div className="field">
-              <label>{sf.dosage}</label>
-              <input value={dosage} onChange={e => setDosage(e.target.value)} placeholder={sf.dosagePlaceholder} />
+              <label>{sf.pillsPerDose}</label>
+              <input type="number" min="0.5" step="0.5" value={pillsPerDose} onChange={e => setPillsPerDose(e.target.value)} />
             </div>
             <div className="field">
-              <label>{sf.frequency}</label>
-              <select value={frequency} onChange={e => setFrequency(e.target.value)}>
-                {FREQUENCIES.map(f => <option key={f} value={f}>{t.freq[f]}</option>)}
-              </select>
+              <label>{sf.dosesPerDay}</label>
+              <input type="number" min="1" step="1" value={dosesPerDay} onChange={e => setDosesPerDay(e.target.value)} />
+            </div>
+            <div className="dosage-total">
+              <span className="dosage-total-num">{totalPerDay}</span>
+              <span className="dosage-total-label">{pillWord} {sf.totalPerDay}</span>
             </div>
           </div>
+
+          <div className="field">
+            <label>{sf.frequency}</label>
+            <select value={frequency} onChange={e => setFrequency(e.target.value)}>
+              {FREQUENCIES.map(f => <option key={f} value={f}>{t.freq[f]}</option>)}
+            </select>
+          </div>
+
           <div className="field">
             <label>{sf.reminderTimes}</label>
             <div className="time-row">
@@ -97,6 +123,7 @@ export default function SupplementForm({ initial, nutrients, onSave, onCancel })
               </div>
             )}
           </div>
+
           <div className="field">
             <label>{sf.notes}</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder={sf.notesPlaceholder} rows={2} />
@@ -123,20 +150,14 @@ export default function SupplementForm({ initial, nutrients, onSave, onCancel })
                     {Object.entries(grouped).map(([cat, items]) => (
                       <optgroup key={cat} label={t.categories[cat] || cat}>
                         {items.map(n => (
-                          <option key={n.id} value={n.id}>
-                            {lang === 'ko' ? n.name_ko : n.name_en}
-                          </option>
+                          <option key={n.id} value={n.id}>{lang === 'ko' ? n.name_ko : n.name_en}</option>
                         ))}
                       </optgroup>
                     ))}
                   </select>
                   <div className="sn-amount">
-                    <input
-                      type="number" min="0" step="any"
-                      placeholder="0"
-                      value={sn.amount_per_serving}
-                      onChange={e => updateRow(i, 'amount_per_serving', e.target.value)}
-                    />
+                    <input type="number" min="0" step="any" placeholder="0" value={sn.amount_per_serving}
+                      onChange={e => updateRow(i, 'amount_per_serving', e.target.value)} />
                     {sn.nutrient && <span className="sn-unit">{sn.nutrient.unit}</span>}
                   </div>
                   <span className="sn-dv">{dvPct !== null ? `${dvPct}%` : '—'}</span>

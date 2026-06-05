@@ -24,7 +24,13 @@ export default function SupplementList({ supplements, onEdit, onDelete }) {
               <h3 className="card-name">{s.name}</h3>
               <span className="badge">{t.freq[s.frequency] ?? s.frequency}</span>
             </div>
-            {s.dosage && <p className="card-dosage">{s.dosage}</p>}
+            {s.manufacturer && <p className="card-manufacturer">{s.manufacturer}</p>}
+            {(s.pills_per_dose || s.doses_per_day) && (
+              <p className="card-dosage">
+                {s.pills_per_dose ?? 1} {lang === 'ko' ? '알' : (s.pills_per_dose === 1 ? 'pill' : 'pills')} × {s.doses_per_day ?? 1}{lang === 'ko' ? '회/일' : '/day'}
+                <span className="dosage-total-inline"> = {(s.pills_per_dose ?? 1) * (s.doses_per_day ?? 1)} {lang === 'ko' ? '알/일' : 'pills/day'}</span>
+              </p>
+            )}
             {s.notes && <p className="card-notes">{s.notes}</p>}
             {s.reminder_times?.length > 0 && (
               <p className="card-reminders">🔔 {s.reminder_times.join(' · ')}</p>

@@ -9,7 +9,9 @@ export const translations = {
     suppForm: {
       addTitle: 'Add Supplement', editTitle: 'Edit Supplement',
       name: 'Name *', namePlaceholder: 'e.g. Vitamin D3',
-      dosage: 'Dosage', dosagePlaceholder: 'e.g. 1 capsule',
+      manufacturer: 'Manufacturer', manufacturerPlaceholder: 'e.g. Nature Made',
+      pillsPerDose: 'Pills per dose', dosesPerDay: 'Doses per day',
+      pill: 'pill', pills: 'pills', timesPerDay: 'times/day', totalPerDay: 'total/day',
       frequency: 'Frequency', reminderTimes: 'Reminder Times',
       notes: 'Notes', notesPlaceholder: 'e.g. Take with food',
       nutrientsSection: 'Nutrients', selectNutrient: '— Select nutrient —',
@@ -59,7 +61,9 @@ export const translations = {
     suppForm: {
       addTitle: '영양제 추가', editTitle: '영양제 수정',
       name: '이름 *', namePlaceholder: '예: 비타민 D3',
-      dosage: '복용량', dosagePlaceholder: '예: 1캡슐',
+      manufacturer: '제조사', manufacturerPlaceholder: '예: 종근당',
+      pillsPerDose: '1회 알약 수', dosesPerDay: '하루 복용 횟수',
+      pill: '알', pills: '알', timesPerDay: '회/일', totalPerDay: '하루 총 복용량',
       frequency: '복용 주기', reminderTimes: '알림 시간',
       notes: '메모', notesPlaceholder: '예: 식후 복용',
       nutrientsSection: '영양소', selectNutrient: '— 영양소 선택 —',

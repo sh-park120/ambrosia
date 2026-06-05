@@ -49,7 +49,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .badge { background: #d1fae5; color: var(--primary-dark); font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
 .taken-badge { background: var(--primary); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
 .builtin-tag { background: #e0f2fe; color: #0369a1; font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 999px; display: inline-block; }
+.card-manufacturer { font-size: 0.8rem; color: var(--text-muted); }
 .card-dosage { font-size: 0.88rem; font-weight: 600; color: var(--primary-dark); }
+.dosage-total-inline { font-weight: 400; color: var(--text-muted); margin-left: 0.35rem; }
 .card-notes { font-size: 0.83rem; color: var(--text-muted); line-height: 1.4; }
 .card-reminders { font-size: 0.82rem; color: var(--text-muted); }
 .card-actions { display: flex; gap: 0.5rem; margin-top: auto; padding-top: 0.5rem; }
@@ -100,7 +102,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .taken .check-circle { background: var(--primary); border-color: var(--primary); }
 .check-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .check-name { font-weight: 600; font-size: 0.95rem; }
-.check-dosage { font-size: 0.82rem; color: var(--text-muted); }
+.check-manufacturer { font-size: 0.75rem; color: var(--text-muted); }
+.check-dosage { font-size: 0.82rem; color: var(--primary-dark); font-weight: 500; }
 .today-nutrition { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); }
 
 /* ── Stats view ── */
@@ -127,6 +130,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16,185,129,.15); }
 .field textarea { resize: vertical; }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.dosage-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; align-items: end; margin-bottom: 1rem; }
+.dosage-total { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f0fdf4; border: 1.5px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; text-align: center; min-width: 72px; }
+.dosage-total-num { font-size: 1.3rem; font-weight: 800; color: var(--primary-dark); line-height: 1; }
+.dosage-total-label { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; white-space: nowrap; }
 .time-row { display: flex; gap: 0.5rem; }
 .time-row input { flex: 1; }
 .time-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }

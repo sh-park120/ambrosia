@@ -6,7 +6,7 @@ const MONTH_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','N
 const MONTH_KO = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
 
 export default function TodayView({ supplements, intakeLogs, today, onToggle }) {
-  const { lang, t } = useLang()
+  const { lang, t } = useLang()  // lang used for dosage labels
   const tt = t.today
 
   const takenIds = new Set(intakeLogs.filter(l => l.taken_date === today).map(l => l.supplement_id))
@@ -56,7 +56,12 @@ export default function TodayView({ supplements, intakeLogs, today, onToggle }) 
               <span className="check-circle">{taken ? '✓' : ''}</span>
               <div className="check-info">
                 <span className="check-name">{s.name}</span>
-                {s.dosage && <span className="check-dosage">{s.dosage}</span>}
+                {s.manufacturer && <span className="check-manufacturer">{s.manufacturer}</span>}
+                {(s.pills_per_dose || s.doses_per_day) && (
+                  <span className="check-dosage">
+                    {s.pills_per_dose ?? 1} {lang === 'ko' ? '알' : 'pill(s)'} × {s.doses_per_day ?? 1}{lang === 'ko' ? '회/일' : '/day'}
+                  </span>
+                )}
               </div>
               {taken && <span className="taken-badge">{tt.done}</span>}
             </button>

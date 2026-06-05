@@ -7,15 +7,22 @@
 
 -- ── 1. supplements ──────────────────────────────────────────
 create table if not exists supplements (
-  id            uuid        default gen_random_uuid() primary key,
-  device_id     text        not null,
-  name          text        not null,
-  dosage        text,
-  frequency     text        default 'daily',
-  reminder_times text[]     default '{}',
-  notes         text,
-  created_at    timestamptz default now()
+  id             uuid        default gen_random_uuid() primary key,
+  device_id      text        not null,
+  name           text        not null,
+  manufacturer   text,
+  pills_per_dose numeric     default 1,
+  doses_per_day  numeric     default 1,
+  frequency      text        default 'daily',
+  reminder_times text[]      default '{}',
+  notes          text,
+  created_at     timestamptz default now()
 );
+
+-- Add new columns if supplements table already exists
+alter table supplements add column if not exists manufacturer   text;
+alter table supplements add column if not exists pills_per_dose numeric default 1;
+alter table supplements add column if not exists doses_per_day  numeric default 1;
 
 alter table supplements enable row level security;
 

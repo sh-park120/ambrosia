@@ -43,6 +43,12 @@ export const translations = {
       dvLabel: 'DV',
     },
 
+    scale: {
+      perPill: 'Per Pill',
+      perDose: 'Per Dose',
+      dailyTotal: 'Daily Total',
+    },
+
     stats: {
       title: 'Last 30 Days', adherence: 'Adherence', streak: 'Streak',
       day: 'day', days: 'days', todayCheck: '✓ Today',
@@ -93,6 +99,12 @@ export const translations = {
       goAdd: '"내 영양제" 탭에서 첫 영양제를 추가해보세요.',
       nutritionTitle: '오늘 영양제로 섭취한 영양소',
       dvLabel: '일일 권장량',
+    },
+
+    scale: {
+      perPill: '알약 1개',
+      perDose: '1회 복용',
+      dailyTotal: '하루 총량',
     },
 
     stats: {

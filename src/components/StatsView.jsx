@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import { useLang } from '../lib/LangContext'
+import ScaleToggle from './ScaleToggle'
+import { scaleAmount, scaleDV, formatAmount } from '../lib/scaleAmount'
 
 function calcStreak(logs, supplementId) {
   const dateSet = new Set(logs.filter(l => l.supplement_id === supplementId).map(l => l.taken_date))
@@ -19,6 +22,7 @@ function calcAdherence(logs, supplementId) {
 export default function StatsView({ supplements, intakeLogs, today }) {
   const { lang, t } = useLang()
   const st = t.stats
+  const [scale, setScale] = useState('day')
 
   if (supplements.length === 0) {
     return (
@@ -32,16 +36,19 @@ export default function StatsView({ supplements, intakeLogs, today }) {
 
   const takenToday = new Set(intakeLogs.filter(l => l.taken_date === today).map(l => l.supplement_id))
 
-  // Aggregate today's nutrients
+  // Aggregate today's nutrients scaled by selected scale
   const nutrientMap = {}
   supplements.filter(s => takenToday.has(s.id)).forEach(s => {
     ;(s.supplement_nutrients || []).forEach(sn => {
       const n = sn.nutrients
       if (!n) return
+      const scaled = scaleAmount(sn.amount_per_serving, scale, s.pills_per_dose, s.doses_per_day)
+      const dv = scaleDV(sn.amount_per_serving, n.recommended_daily, scale, s.pills_per_dose, s.doses_per_day)
       if (!nutrientMap[n.id]) {
-        nutrientMap[n.id] = { name_en: n.name_en, name_ko: n.name_ko, unit: n.unit, amount: 0, recommended_daily: n.recommended_daily }
+        nutrientMap[n.id] = { name_en: n.name_en, name_ko: n.name_ko, unit: n.unit, amount: 0, dv: 0, hasDV: dv !== null }
       }
-      nutrientMap[n.id].amount += Number(sn.amount_per_serving) || 0
+      nutrientMap[n.id].amount += scaled
+      if (dv !== null) nutrientMap[n.id].dv += dv
     })
   })
   const aggNutrients = Object.values(nutrientMap)
@@ -80,27 +87,25 @@ export default function StatsView({ supplements, intakeLogs, today }) {
 
       {aggNutrients.length > 0 && (
         <div className="today-nutrition" style={{ marginTop: '2rem' }}>
-          <h3 className="section-title">{st.todayNutrients}</h3>
-          <ul className="nutrient-list">
-            {aggNutrients.map((n, i) => {
-              const dvPct = n.recommended_daily
-                ? Math.round((n.amount / n.recommended_daily) * 100)
-                : null
-              return (
-                <li key={i} className="nutrient-item">
-                  <div className="nutrient-item-row">
-                    <span className="nutrient-name">{lang === 'ko' ? n.name_ko : n.name_en}</span>
-                    <span className="nutrient-amount">{Math.round(n.amount * 10) / 10} {n.unit}</span>
+          <div className="nutrition-header">
+            <h3 className="section-title">{st.todayNutrients}</h3>
+            <ScaleToggle value={scale} onChange={setScale} />
+          </div>
+          <ul className="nutrient-list" style={{ marginTop: '0.75rem' }}>
+            {aggNutrients.map((n, i) => (
+              <li key={i} className="nutrient-item">
+                <div className="nutrient-item-row">
+                  <span className="nutrient-name">{lang === 'ko' ? n.name_ko : n.name_en}</span>
+                  <span className="nutrient-amount">{formatAmount(n.amount)} {n.unit}</span>
+                </div>
+                {n.hasDV && (
+                  <div className="dv-bar-wrap">
+                    <div className="dv-bar" style={{ width: `${Math.min(n.dv, 100)}%`, background: n.dv >= 100 ? 'var(--primary)' : n.dv >= 50 ? '#f59e0b' : '#94a3b8' }} />
+                    <span className="dv-pct">{n.dv}% DV</span>
                   </div>
-                  {dvPct !== null && (
-                    <div className="dv-bar-wrap">
-                      <div className="dv-bar" style={{ width: `${Math.min(dvPct, 100)}%`, background: dvPct >= 100 ? 'var(--primary)' : dvPct >= 50 ? '#f59e0b' : '#94a3b8' }} />
-                      <span className="dv-pct">{dvPct}% DV</span>
-                    </div>
-                  )}
-                </li>
-              )
-            })}
+                )}
+              </li>
+            ))}
           </ul>
         </div>
       )}
